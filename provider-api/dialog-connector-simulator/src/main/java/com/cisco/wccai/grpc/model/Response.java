@@ -6,18 +6,11 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.List;
+
 @Getter
 @Setter
 @Builder
 public class Response {
-
-    private CcaiApi.StreamingAnalyzeContentResponse callStartResponse;
-    private CcaiApi.StreamingAnalyzeContentResponse startOfInputResponse;
-    private CcaiApi.StreamingAnalyzeContentResponse partialRecognitionResponse;
-    private CcaiApi.StreamingAnalyzeContentResponse endOfInputResponse;
-    private CcaiApi.StreamingAnalyzeContentResponse finalRecognitionResponse;
-    private CcaiApi.StreamingAnalyzeContentResponse finalVAResponse;
-    private CcaiApi.StreamingAnalyzeContentResponse finalDTMFResponse;
-    private CcaiApi.StreamingAnalyzeContentResponse callEndResponse;
-    private CcaiApi.StreamingAnalyzeContentResponse aaResponse;
+    private List<CcaiApi.StreamingAnalyzeContentResponse> responses;
 }

@@ -5,15 +5,17 @@ import com.cisco.wcc.ccai.v1.Recognize;
 import com.cisco.wcc.ccai.v1.Suggestions;
 import com.cisco.wcc.ccai.v1.Virtualagent;
 import com.cisco.wccai.grpc.model.Response;
+import com.cisco.wccai.grpc.utils.LoadProperties;
 import com.cisco.wccai.grpc.utils.Utils;
 import com.google.common.collect.Lists;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.UnknownFieldSet;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
+import java.io.InputStream;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  * The type Prepare response.
@@ -26,7 +28,10 @@ public class PrepareResponse {
     public static final String EN_US = "en-US";
     private static Recognize.StreamingRecognitionResult recognitionResult;
     private static final List<List<String>> listOfLists = Lists.newArrayList();
-
+    private static final Properties properties = LoadProperties.getProperties();
+    private static final boolean PROMPT_AUDIO_WAV_HEADER_STRIP = Boolean.parseBoolean(
+            properties.getProperty("PROMPT_AUDIO_WAV_HEADER_STRIP", "false"));
+    private static final int CHUNK_SIZE = 8192;
     /**
      * Instantiates a new Prepare response.
      */
@@ -56,8 +61,10 @@ public class PrepareResponse {
                                 .build()))
                 .setInputMode(Virtualagent.InputMode.INPUT_VOICE_DTMF)
                 .build();
-
-        return Response.builder().callStartResponse(CcaiApi.StreamingAnalyzeContentResponse.newBuilder().setVaResult(result).build()).build();
+        CcaiApi.StreamingAnalyzeContentResponse response = CcaiApi.StreamingAnalyzeContentResponse.newBuilder()
+                .setVaResult(result)
+                .build();
+        return Response.builder().responses(Collections.singletonList(response)).build();
     }
 
     /**
@@ -66,7 +73,14 @@ public class PrepareResponse {
      * @return the response
      */
     public static Response startOfInputResponse() {
-        return Response.builder().startOfInputResponse(CcaiApi.StreamingAnalyzeContentResponse.newBuilder().setRecognitionResult(Recognize.StreamingRecognitionResult.newBuilder().setResponseEvent(Recognize.OutputEvent.EVENT_START_OF_INPUT).build()).build()).build();
+        CcaiApi.StreamingAnalyzeContentResponse response =
+                CcaiApi.StreamingAnalyzeContentResponse.newBuilder()
+                        .setRecognitionResult(
+                                Recognize.StreamingRecognitionResult.newBuilder()
+                                        .setResponseEvent(Recognize.OutputEvent.EVENT_START_OF_INPUT)
+                                        .build()
+                        ).build();
+        return Response.builder().responses(Collections.singletonList(response)).build();
     }
 
     /**
@@ -100,7 +114,11 @@ public class PrepareResponse {
                     .addAlternatives(speechAlternativeList.stream().iterator().next())
                     .build();
         }
-        return Response.builder().partialRecognitionResponse(CcaiApi.StreamingAnalyzeContentResponse.newBuilder().setRecognitionResult(recognitionResult).build()).build();
+        CcaiApi.StreamingAnalyzeContentResponse response =
+                CcaiApi.StreamingAnalyzeContentResponse.newBuilder()
+                        .setRecognitionResult(recognitionResult)
+                        .build();
+        return Response.builder().responses(Collections.singletonList(response)).build();
     }
 
     /**
@@ -130,8 +148,11 @@ public class PrepareResponse {
                     .addAlternatives(speechAlternativeList.stream().iterator().next())
                     .build();
         }
-        return Response.builder().partialRecognitionResponse(CcaiApi.StreamingAnalyzeContentResponse.newBuilder().setRecognitionResult(recognitionResult).build()).build();
-
+        CcaiApi.StreamingAnalyzeContentResponse response =
+                CcaiApi.StreamingAnalyzeContentResponse.newBuilder()
+                        .setRecognitionResult(recognitionResult)
+                        .build();
+        return Response.builder().responses(Collections.singletonList(response)).build();
     }
 
     /**
@@ -141,7 +162,14 @@ public class PrepareResponse {
      */
     public static Response prepareEndOfInputResponse()
     {
-        return Response.builder().endOfInputResponse(CcaiApi.StreamingAnalyzeContentResponse.newBuilder().setRecognitionResult(Recognize.StreamingRecognitionResult.newBuilder().setResponseEvent(Recognize.OutputEvent.EVENT_END_OF_INPUT).build()).build()).build();
+        CcaiApi.StreamingAnalyzeContentResponse response =
+                CcaiApi.StreamingAnalyzeContentResponse.newBuilder()
+                        .setRecognitionResult(
+                                Recognize.StreamingRecognitionResult.newBuilder()
+                                        .setResponseEvent(Recognize.OutputEvent.EVENT_END_OF_INPUT)
+                                        .build()
+                        ).build();
+        return Response.builder().responses(Collections.singletonList(response)).build();
     }
 
     /**
@@ -170,7 +198,11 @@ public class PrepareResponse {
                 .setAgentanswer(agentAnswer)
                 .build();
 
-        return Response.builder().aaResponse(CcaiApi.StreamingAnalyzeContentResponse.newBuilder().setAgentAnswerResult(agentAnswerResult).build()).build();
+        CcaiApi.StreamingAnalyzeContentResponse response =
+                CcaiApi.StreamingAnalyzeContentResponse.newBuilder()
+                        .setAgentAnswerResult(agentAnswerResult)
+                        .build();
+        return Response.builder().responses(Collections.singletonList(response)).build();
     }
 
     /**
@@ -192,8 +224,11 @@ public class PrepareResponse {
                                 .build()))
                 .setInputMode(Virtualagent.InputMode.INPUT_VOICE)
                 .build();
-
-        return Response.builder().finalVAResponse(CcaiApi.StreamingAnalyzeContentResponse.newBuilder().setVaResult(result).build()).build();
+        CcaiApi.StreamingAnalyzeContentResponse response =
+                CcaiApi.StreamingAnalyzeContentResponse.newBuilder()
+                        .setVaResult(result)
+                        .build();
+        return Response.builder().responses(Collections.singletonList(response)).build();
     }
 
 
@@ -216,8 +251,11 @@ public class PrepareResponse {
                                 .build()))
                 .setInputMode(Virtualagent.InputMode.INPUT_VOICE_DTMF)
                 .build();
-
-        return Response.builder().finalDTMFResponse(CcaiApi.StreamingAnalyzeContentResponse.newBuilder().setVaResult(result).build()).build();
+        CcaiApi.StreamingAnalyzeContentResponse response =
+                CcaiApi.StreamingAnalyzeContentResponse.newBuilder()
+                        .setVaResult(result)
+                        .build();
+        return Response.builder().responses(Collections.singletonList(response)).build();
     }
 
     /**
@@ -239,9 +277,64 @@ public class PrepareResponse {
                         .setInputText("DTMF event received from client"))
                 .setResponsePayload("Response payload for DTMF event")
                 .build();
-        return Response.builder().finalDTMFResponse(CcaiApi.StreamingAnalyzeContentResponse.newBuilder().setVaResult(result).build()).build();
-
+        CcaiApi.StreamingAnalyzeContentResponse response =
+                CcaiApi.StreamingAnalyzeContentResponse.newBuilder()
+                        .setVaResult(result)
+                        .build();
+        return Response.builder().responses(Collections.singletonList(response)).build();
     }
 
+    public static Response prepareChunkedVAResponse() throws IOException {
+        byte[] audioBytes;
+        try (InputStream inputStream = Utils.getInputStreamForVaResponse()) {
+            audioBytes = getAudioBytes(inputStream);
+        }
+        if (PROMPT_AUDIO_WAV_HEADER_STRIP) {
+            audioBytes = stripWavHeader(audioBytes);
+        }
+        List<CcaiApi.StreamingAnalyzeContentResponse> responses = createChunkedResponses(audioBytes, CHUNK_SIZE);
+        return Response.builder().responses(responses).build();
+    }
+
+    private static byte[] getAudioBytes(InputStream inputStream) throws IOException {
+        if (inputStream == null) {
+            throw new IOException("va_response.wav not found in resources/audio");
+        }
+        return inputStream.readAllBytes();
+    }
+
+    private static byte[] stripWavHeader(byte[] audioBytes) throws IOException {
+        int wavHeaderSize = Utils.getWavHeaderSize(audioBytes);
+        if (wavHeaderSize <= 0) {
+            throw new IOException("Invalid WAV header in va_response.wav");
+        }
+        return Arrays.copyOfRange(audioBytes, wavHeaderSize, audioBytes.length);
+    }
+
+    private static List<CcaiApi.StreamingAnalyzeContentResponse> createChunkedResponses(byte[] audioBytes, int chunkSize) {
+        int totalChunks = (int) Math.ceil((double) audioBytes.length / chunkSize);
+        return IntStream.range(0, totalChunks)
+                .mapToObj(i -> createResponseForChunk(audioBytes, i, chunkSize, totalChunks))
+                .toList();
+    }
+
+    private static CcaiApi.StreamingAnalyzeContentResponse createResponseForChunk(byte[] audioBytes, int chunkIndex, int chunkSize, int totalChunks) {
+        int start = chunkIndex * chunkSize;
+        int end = Math.min(start + chunkSize, audioBytes.length);
+        byte[] chunk = Arrays.copyOfRange(audioBytes, start, end);
+
+        Virtualagent.Prompt.Builder promptBuilder = Virtualagent.Prompt.newBuilder()
+                .setAudioContent(ByteString.copyFrom(chunk))
+                .setBargein(true)
+                .setFinal(chunkIndex == totalChunks - 1);
+
+        Virtualagent.VirtualAgentResult vaResult = Virtualagent.VirtualAgentResult.newBuilder()
+                .addPrompts(promptBuilder.build())
+                .build();
+
+        return CcaiApi.StreamingAnalyzeContentResponse.newBuilder()
+                .setVaResult(vaResult)
+                .build();
+    }
 }
 

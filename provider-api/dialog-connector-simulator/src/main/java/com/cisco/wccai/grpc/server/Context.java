@@ -11,39 +11,26 @@ import java.util.Map;
 
 public class Context {
 
-    Context()
-    {
-
-    }
     private static final Map<State, Response> responseMap = new EnumMap<>(State.class);
+
+    private Context() {
+    }
 
     public static void init() throws IOException {
 
-        Response callStartResponse             =  PrepareResponse.prepareCallStartResponse();
-        Response startOfInputResponse          =  PrepareResponse.startOfInputResponse();
-        Response partialRecognitionResponse    =  PrepareResponse.preparePartialRecognitionResponse();
-        Response endOfInputResponse            =  PrepareResponse.prepareEndOfInputResponse();
-        Response finalRecognitionResponse      =  PrepareResponse.prepareFinalRecognitionResponse();
-        Response finalVAResponse              =  PrepareResponse.prepareFinalVAResponse();
-        Response aaResponse                    =  PrepareResponse.prepareAAResponse();
-        Response dtmfResponse                  =  PrepareResponse.prepareDTMFResponse();
-        Response callEndResponse               =  PrepareResponse.prepareCallEndResponse();
-
-
-        responseMap.put(State.CALL_START, callStartResponse);
-        responseMap.put(State.START_OF_INPUT, startOfInputResponse);
-        responseMap.put(State.PARTIAL_RECOGNITION, partialRecognitionResponse);
-        responseMap.put(State.END_OF_INPUT, endOfInputResponse);
-        responseMap.put(State.FINAL_RECOGNITION, finalRecognitionResponse);
-        responseMap.put(State.VA, finalVAResponse);
-        responseMap.put(State.DTMF, dtmfResponse);
-        responseMap.put(State.CALL_END, callEndResponse);
-        responseMap.put(State.AA, aaResponse);
-
+        responseMap.put(State.CALL_START, PrepareResponse.prepareCallStartResponse());
+        responseMap.put(State.START_OF_INPUT, PrepareResponse.startOfInputResponse());
+        responseMap.put(State.PARTIAL_RECOGNITION, PrepareResponse.preparePartialRecognitionResponse());
+        responseMap.put(State.END_OF_INPUT, PrepareResponse.prepareEndOfInputResponse());
+        responseMap.put(State.FINAL_RECOGNITION, PrepareResponse.prepareFinalRecognitionResponse());
+        responseMap.put(State.VA, PrepareResponse.prepareFinalVAResponse());
+        responseMap.put(State.AA, PrepareResponse.prepareAAResponse());
+        responseMap.put(State.DTMF, PrepareResponse.prepareDTMFResponse());
+        responseMap.put(State.CALL_END, PrepareResponse.prepareCallEndResponse());
+        responseMap.put(State.VA_CHUNKED, PrepareResponse.prepareChunkedVAResponse());
     }
 
     public static Response getResponse(State state){
-       return responseMap.get(state);
+        return responseMap.get(state);
     }
-
 }

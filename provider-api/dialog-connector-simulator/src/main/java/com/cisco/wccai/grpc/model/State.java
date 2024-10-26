@@ -9,5 +9,6 @@ public enum State {
     END_OF_INPUT,
     VA,
     CALL_END,
-    AA
+    AA,
+    VA_CHUNKED
 }

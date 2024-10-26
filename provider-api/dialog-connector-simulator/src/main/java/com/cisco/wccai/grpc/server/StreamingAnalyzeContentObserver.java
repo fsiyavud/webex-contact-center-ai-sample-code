@@ -3,6 +3,7 @@ package com.cisco.wccai.grpc.server;
 import com.cisco.wcc.ccai.v1.CcaiApi;
 import com.cisco.wcc.ccai.v1.Virtualagent;
 import com.cisco.wccai.grpc.model.State;
+import com.cisco.wccai.grpc.utils.ResponseUtils;
 import io.grpc.stub.StreamObserver;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -65,22 +66,22 @@ public class StreamingAnalyzeContentObserver implements StreamObserver<CcaiApi.S
         if(requestTypeMap.get(conversationId).equalsIgnoreCase(VIRTUAL_AGENT)) {
             if (vaResponse.isEndOfInput()) {
                 LOGGER.info("writing response from onCompleted to client for IS_END_OF_INPUT event, conversationId : {}", conversationId);
-                responseObserver.onNext(Context.getResponse(State.VA).getFinalVAResponse());
+                ResponseUtils.sendResponses(Context.getResponse(State.VA), responseObserver);
             } else if ((streamingAnalyzeContentRequest.getEvent().getEventType() == Virtualagent.InputEvent.EventType.CALL_END)) {
                 LOGGER.info("writing empty response from onCompleted to client for CALL_END event, conversationId : {}", conversationId);
                 responseObserver.onNext(CcaiApi.StreamingAnalyzeContentResponse.newBuilder().build());
             } else if((streamingAnalyzeContentRequest.getEvent().getEventType() == Virtualagent.InputEvent.EventType.CALL_START))
             {
                 LOGGER.info("writing response from onCompleted to client for CALL_START event, conversationId : {}", conversationId);
-                responseObserver.onNext(Context.getResponse(State.CALL_START).getCallStartResponse());
+                ResponseUtils.sendResponses(Context.getResponse(State.CALL_START), responseObserver);
             }else if(vaResponse.isDtmfReceived()){
                 LOGGER.info("writing response from onCompleted to client, conversationId : {}", conversationId);
-                responseObserver.onNext(Context.getResponse(State.VA).getFinalVAResponse());
+                ResponseUtils.sendResponses(Context.getResponse(State.VA), responseObserver);
             }
         } else if (requestTypeMap.get(conversationId).equalsIgnoreCase(AGENT_ASSIST)) {
             LOGGER.info("received onCompleted from client, sending final response and AA result for conversationId : {}", conversationId);
-            responseObserver.onNext(Context.getResponse(State.FINAL_RECOGNITION).getFinalRecognitionResponse());
-            responseObserver.onNext(Context.getResponse(State.AA).getAaResponse());
+            ResponseUtils.sendResponses(Context.getResponse(State.FINAL_RECOGNITION), responseObserver);
+            ResponseUtils.sendResponses(Context.getResponse(State.AA), responseObserver);
         }
         responseObserver.onCompleted();
     }

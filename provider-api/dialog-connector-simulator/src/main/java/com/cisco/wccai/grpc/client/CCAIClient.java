@@ -1,7 +1,7 @@
 package com.cisco.wccai.grpc.client;
 
 
-import com.cisco.wcc.ccai.v1.*;
+import com.cisco.wcc.ccai.v1.AnalyzeContentServiceGrpc;
 import com.cisco.wccai.grpc.utils.LoadProperties;
 import io.grpc.ManagedChannel;
 import io.grpc.netty.NegotiationType;
@@ -46,7 +46,7 @@ public class CCAIClient {
     /**
      * The Property.
      */
-    Properties property = LoadProperties.loadProperties();
+    Properties property = LoadProperties.getProperties();
     /**
      * The Api url.
      */

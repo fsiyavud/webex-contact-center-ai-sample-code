@@ -99,6 +99,31 @@ Verify the Installation by opening a new terminal and run:
 
    `mvn clean install`
 
+### Testing on Local Machine
+
+1. Run the server.
+
+   `java -jar target/dialog-connector-simulator-1.0.0-SNAPSHOT-allinone.jar`
+
+   All properties mentioned in `config.properties` file can be overridden using environment variables or system properties.
+
+   `java -jar -DSEND_CHUNKED_RESPONSE=true -DPROMPT_AUDIO_WAV_HEADER_STRIP=true target/dialog-connector-simulator-1.0.0-SNAPSHOT-allinone.jar`
+
+   Priority of override is as follows:
+
+   System Property > Environment Variable > config.properties
+
+2. Verify that server is running by checking for the following messages in console output:
+
+   ```log
+   2024-10-26 12:05:11 INFO  GrpcServer:34 - server started at port : 8086
+   2024-10-26 12:05:11 INFO  GrpcServer:36 - Initializing the context
+   ```
+
+3. Run the client.
+
+   `java -cp target/dialog-connector-simulator-1.0.0-SNAPSHOT-allinone.jar com.cisco.wccai.grpc.client.ConnectorClientVA`
+
 ### Detailed Flow with Sequence Diagram
 #### Step 1. Start of Conversation
 1. The Dialog Connector will start up as a **gRPC Server Application** (`run GrpcServer.java`).

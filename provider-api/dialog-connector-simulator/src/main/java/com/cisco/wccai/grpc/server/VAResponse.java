@@ -2,8 +2,10 @@ package com.cisco.wccai.grpc.server;
 
 import com.cisco.wcc.ccai.v1.CcaiApi;
 import com.cisco.wcc.ccai.v1.Virtualagent;
+import com.cisco.wccai.grpc.model.Response;
 import com.cisco.wccai.grpc.model.State;
 import com.cisco.wccai.grpc.utils.LoadProperties;
+import com.cisco.wccai.grpc.utils.ResponseUtils;
 import io.grpc.stub.StreamObserver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,7 +21,9 @@ public class VAResponse {
     private boolean isFirstTimeDTMF = Boolean.TRUE;
     private boolean isTermCharacter = Boolean.TRUE;
 
-    private static final Properties properties = LoadProperties.loadProperties();
+    private static final Properties properties = LoadProperties.getProperties();
+    private static final boolean SEND_CHUNKED_RESPONSE =
+            Boolean.parseBoolean(properties.getProperty("SEND_CHUNKED_RESPONSE", "false"));
     private static final int PROMPT_DURATION_SEC = Integer.parseInt(properties.getProperty("PROMPT_DURATION_MS"));
     private final long startTime = System.currentTimeMillis();
     private boolean isStartOfInput = false;
@@ -44,7 +48,7 @@ public class VAResponse {
                     break;
                 case CALL_END:
                     LOGGER.info("received CALL_END event for conversationId : {} ", request.getConversationId());
-                    responseObserver.onNext(Context.getResponse(State.CALL_END).getCallEndResponse());
+                    ResponseUtils.sendResponses(Context.getResponse(State.CALL_END), responseObserver);
                     break;
                 case CUSTOM:
                     LOGGER.info("received CUSTOM event for conversationId : {} ", request.getConversationId());
@@ -53,13 +57,11 @@ public class VAResponse {
                     result = Virtualagent.VirtualAgentResult.newBuilder().setResponsePayload("UNSPECIFIED EVENT RECEIVED").build();
                     responseObserver.onNext(CcaiApi.StreamingAnalyzeContentResponse.newBuilder().setVaResult(result).build());
                     break;
-
             }
         } else if (request.hasDtmf()) {
             LOGGER.info("received dtmf event for conversationId : {} ", request.getConversationId());
             processDTMF(request, responseObserver);
-        } else {
-
+        } else if (request.hasAudio()) {
             LOGGER.info("received audio from client for conversationId : {} ", request.getConversationId());
             processAudio(responseObserver);
         }
@@ -76,37 +78,42 @@ public class VAResponse {
             isDtmfReceived = true;
             isFirstTimeDTMF = false;
             LOGGER.info("received first character for conversationId : {} , sending START_OF_INPUT event ", request.getConversationId());
-            responseObserver.onNext(Context.getResponse(State.START_OF_INPUT).getStartOfInputResponse());
+            ResponseUtils.sendResponses(Context.getResponse(State.START_OF_INPUT), responseObserver);
         } else if ((Virtualagent.Dtmf.DTMF_POUND == dtmf) && isTermCharacter) {
             LOGGER.info("received term character for conversationId : {} , sending END_OF_INPUT event", request.getConversationId());
             isTermCharacter = false;
-            responseObserver.onNext(Context.getResponse(State.END_OF_INPUT).getEndOfInputResponse());
+            ResponseUtils.sendResponses(Context.getResponse(State.END_OF_INPUT), responseObserver);
         }
     }
 
     // Refer readme for detail flow. (Virtual Agent mode section)
     private void processAudio(StreamObserver<CcaiApi.StreamingAnalyzeContentResponse> responseObserver) {
 
-        // upon receiving the first interim response, sending START_OF_INPUT event, will be used by client for barge-in.
-        if(System.currentTimeMillis()>startTime + PROMPT_DURATION_SEC*0.2 && !isStartOfInput){
-            isStartOfInput = true;
-            responseObserver.onNext(Context.getResponse(State.START_OF_INPUT).getStartOfInputResponse());
-        }
-        // sending partial recognition responses
-        if(System.currentTimeMillis()>startTime + PROMPT_DURATION_SEC*0.4 && System.currentTimeMillis() < startTime + PROMPT_DURATION_SEC*0.8){
-            responseObserver.onNext(Context.getResponse(State.PARTIAL_RECOGNITION).getPartialRecognitionResponse());
-        }
-
-        // sending END_OF_INPUT when user takes pause ( Ex. END_OF_SINGLE_UTTERANCE for Google).
-        if(System.currentTimeMillis()>startTime + PROMPT_DURATION_SEC*0.8 && !isEndOfInput){
-            isEndOfInput = true;
-            responseObserver.onNext(Context.getResponse(State.END_OF_INPUT).getEndOfInputResponse());
+        if (SEND_CHUNKED_RESPONSE) {
+            LOGGER.info("SEND_CHUNKED_RESPONSE is true, sending chunked VA responses.");
+            Response response = Context.getResponse(State.VA_CHUNKED);
+            ResponseUtils.sendResponses(response, responseObserver);
+        } else {
+            LOGGER.info("SEND_CHUNKED_RESPONSE is false, VA prompt will have only one chunk");
+            // upon receiving the first interim response, sending START_OF_INPUT event, will be used by client for barge-in.
+            if (System.currentTimeMillis() > startTime + PROMPT_DURATION_SEC * 0.2 && !isStartOfInput) {
+                isStartOfInput = true;
+                ResponseUtils.sendResponses(Context.getResponse(State.START_OF_INPUT), responseObserver);
+            }
+            // sending partial recognition responses
+            if (System.currentTimeMillis() > startTime + PROMPT_DURATION_SEC * 0.4 && System.currentTimeMillis() < startTime + PROMPT_DURATION_SEC * 0.8) {
+                ResponseUtils.sendResponses(Context.getResponse(State.PARTIAL_RECOGNITION), responseObserver);
+            }
+            // sending END_OF_INPUT when user takes pause ( Ex. END_OF_SINGLE_UTTERANCE for Google).
+            if (System.currentTimeMillis() > startTime + PROMPT_DURATION_SEC * 0.8 && !isEndOfInput) {
+                isEndOfInput = true;
+                ResponseUtils.sendResponses(Context.getResponse(State.END_OF_INPUT), responseObserver);
+            }
         }
     }
 
     public  boolean isEndOfInput() {
         return isEndOfInput;
     }
-
 }
 

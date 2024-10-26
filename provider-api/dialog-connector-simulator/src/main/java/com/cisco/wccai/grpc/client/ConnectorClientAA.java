@@ -1,6 +1,6 @@
 package com.cisco.wccai.grpc.client;
 
-import com.cisco.wcc.ccai.v1.*;
+import com.cisco.wcc.ccai.v1.CcaiApi;
 import com.cisco.wccai.grpc.utils.LoadProperties;
 import com.google.common.util.concurrent.Uninterruptibles;
 import com.google.protobuf.ByteString;
@@ -8,6 +8,7 @@ import io.grpc.stub.StreamObserver;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -19,7 +20,7 @@ import java.util.concurrent.TimeUnit;
 public class ConnectorClientAA {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ConnectorClientAA.class);
-    private static final Properties PROPERTY = LoadProperties.loadProperties();
+    private static final Properties PROPERTY = LoadProperties.getProperties();
     private static final String ORG_ID = PROPERTY.getProperty("ORG_ID");
     private static final String AUDIO_ENCODING_TYPE = PROPERTY.getProperty("AUDIO_ENCODING_TYPE");
     private static final int BUFFER_SIZE = Integer.parseInt(PROPERTY.getProperty("BUFFER_SIZE"));
